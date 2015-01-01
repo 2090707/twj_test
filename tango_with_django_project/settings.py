@@ -16,6 +16,14 @@ TEMPLATE_PATH = os.path.join(BASE_DIR, 'templates')
 STATIC_PATH = os.path.join(BASE_DIR, 'static')
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
+# Enable browser-length sessions (disabled by default)
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+
+"""
+SESSION_COOKIE_AGE = 1209600
+persistent session expiration of cookies (must be integer) / 1209600 = 2 weeks /
+"""
+
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/1.7/howto/deployment/checklist/
 

@@ -7,14 +7,78 @@ from django.views.decorators.csrf import csrf_protect
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.template import RequestContext
+from datetime import datetime
 
 def index(request):
-	category_list = Category.objects.order_by('-likes')[:5]
-	context_dict = {'boldmessage': "I am bold font from the context",
-					'categories': category_list}
-
-	context_dict['pages_by_views'] = Page.objects.order_by('views')[0:5]
-	return render(request, 'rango/index.html', context_dict)
+    category_list = Category.objects.order_by('-likes')[:5]
+    context_dict = {'boldmessage': "I am bold font from the context",
+    'categories': category_list}
+    context_dict['pages_by_views'] = Page.objects.order_by('views')[0:5]
+    
+    # Get number of visits to the site
+    # Using COOKIES.get() to obtain the visits cookie
+    # If cookie exists => returned value is casted to integer
+    # If not => default to 0 and cast that
+    
+    """ Commented out code is client-side cookies
+    
+    visits = int(request.COOKIES.get('visits', '1'))
+    
+    reset_last_visit_time = False
+    response = render(request, 'rango/index.html', context_dict)
+    """
+    visits = request.session.get('visits')
+    if not visits:
+        visits = 1
+    reset_last_visit_time = False
+    
+    last_visit = request.session.get('last_visit')
+    if last_visit:
+        last_visit_time = datetime.strptime(last_visit[:-7], "%Y-%m-%d %H:%M:%S")
+        
+        if (datetime.now() - last_visit_time).seconds > 0:
+            # reassign the value of the cookie to +1 of what it was before...
+            visits = visits + 1
+            # update the last visit cookie too...
+            reset_last_visit_time = True
+    else:
+        # create last_visit cookie to current date/time
+        reset_last_visit_time = True
+        
+    if reset_last_visit_time:
+        request.session['last_visit'] = str(datetime.now())
+        request.session['visits'] = visits
+    context_dict['visits'] = visits
+    
+    response = render(request, 'rango/index.html', context_dict)
+    
+    """
+    # Does last_visit cookie exist?
+    if 'last_visit' in request.COOKIES:
+        # get the cookie's value
+        last_visit = request.COOKIES['last_visit']
+        # cast the value to a date/time object
+        last_visit_time = datetime.strptime(last_visit[:-7], "%Y-%m-%d %H:%M:%S")
+        
+        # if it's been more than a day since last visit...
+        if (datetime.now() - last_visit_time).days > 0:
+            visits = visits + 1
+            # flag that cookie lst_visit needs to be updated
+            reset_last_visit_time = True
+    else:
+        # flag that last_visit cookie should be set
+        reset_last_visit_time = True
+        context_dict['visits'] = visits
+        
+        # obtain response object early so we can add cookie info
+        response = render(request, 'rango/index.html', context_dict)
+        
+    if reset_last_visit_time:
+        response.set_cookie('last_visit', datetime.now())
+        response.set_cookie('visits', visits)
+    """
+    
+    return response
 
 def about(request):
 	context_dict = {'aboutinfo': "Rango is a lizard Django"}
